@@ -11,9 +11,9 @@ interface Props {
 }
 
 const DEFAULT_APPLIANCES: Partial<Appliance>[] = [
-  { name: "Air Conditioner", power: 1500, usageHours: 8, startHour: 10, endHour: 18, type: "flexible" },
+  { name: "Air Conditioner", power: 1500, usageHours: 8, startHour: 14, endHour: 22, type: "flexible" },
   { name: "Refrigerator", power: 150, usageHours: 24, startHour: 0, endHour: 24, type: "fixed" },
-  { name: "Washing Machine", power: 500, usageHours: 2, startHour: 9, endHour: 11, type: "flexible" },
+  { name: "Washing Machine", power: 500, usageHours: 2, startHour: 18, endHour: 20, type: "flexible" },
 ];
 
 export default function InputForm({ onAnalyze }: Props) {
@@ -85,18 +85,36 @@ export default function InputForm({ onAnalyze }: Props) {
         <div className="mt-4 pt-4 border-t border-border">
           <p className="text-sm font-medium text-muted-foreground mb-3">Add Appliance</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            <Input placeholder="Name" value={newApp.name} onChange={(e) => setNewApp({ ...newApp, name: e.target.value })} />
-            <Input type="number" placeholder="Watts" value={newApp.power || ""} onChange={(e) => setNewApp({ ...newApp, power: Number(e.target.value) })} />
-            <Input type="number" placeholder="Hours" value={newApp.usageHours || ""} onChange={(e) => setNewApp({ ...newApp, usageHours: Number(e.target.value) })} />
-            <Input type="number" placeholder="Start hr" value={newApp.startHour ?? ""} onChange={(e) => setNewApp({ ...newApp, startHour: Number(e.target.value) })} />
-            <Input type="number" placeholder="End hr" value={newApp.endHour ?? ""} onChange={(e) => setNewApp({ ...newApp, endHour: Number(e.target.value) })} />
-            <Select value={newApp.type} onValueChange={(v) => setNewApp({ ...newApp, type: v as "fixed" | "flexible" })}>
+            <div>
+              <Label className="text-xs text-muted-foreground">Appliance Name</Label>
+              <Input placeholder="e.g. Fan" value={newApp.name} onChange={(e) => setNewApp({ ...newApp, name: e.target.value })} />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Power (Watts)</Label>
+              <Input type="number" placeholder="75" value={newApp.power || ""} onChange={(e) => setNewApp({ ...newApp, power: Number(e.target.value) })} />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Usage (Hours/day)</Label>
+              <Input type="number" placeholder="8" value={newApp.usageHours || ""} onChange={(e) => setNewApp({ ...newApp, usageHours: Number(e.target.value) })} />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Start Hour (0-23)</Label>
+              <Input type="number" placeholder="8" value={newApp.startHour ?? ""} onChange={(e) => setNewApp({ ...newApp, startHour: Number(e.target.value) })} min={0} max={23} />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">End Hour (0-24)</Label>
+              <Input type="number" placeholder="20" value={newApp.endHour ?? ""} onChange={(e) => setNewApp({ ...newApp, endHour: Number(e.target.value) })} min={0} max={24} />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Type</Label>
+              <Select value={newApp.type} onValueChange={(v) => setNewApp({ ...newApp, type: v as "fixed" | "flexible" })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="flexible">Flexible</SelectItem>
                 <SelectItem value="fixed">Fixed</SelectItem>
               </SelectContent>
             </Select>
+            </div>
           </div>
           <Button onClick={addAppliance} variant="outline" className="mt-3" size="sm">
             <Plus className="h-4 w-4 mr-1" /> Add

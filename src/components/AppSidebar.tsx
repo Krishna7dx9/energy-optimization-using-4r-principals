@@ -1,6 +1,7 @@
-import { LayoutDashboard, Zap, Package, MapPin, BookOpen, Info, Leaf, Scale } from "lucide-react";
+import { LayoutDashboard, Zap, Package, MapPin, BookOpen, Info, Leaf, Scale, LogIn, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Sidebar,
   SidebarContent,
@@ -28,6 +29,8 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
 
   return (
     <Sidebar collapsible="icon">
@@ -70,8 +73,20 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         {!collapsed && (
-          <div className="px-3 py-3 text-[10px] text-muted-foreground text-center">
-            Free & Open • No Login Required
+          <div className="px-3 py-3 space-y-2">
+            {user ? (
+              <div className="text-center">
+                <p className="text-[10px] text-muted-foreground truncate">{user.email}</p>
+                <button onClick={signOut} className="text-[10px] text-destructive hover:underline flex items-center gap-1 mx-auto mt-1">
+                  <LogOut className="h-3 w-3" /> Sign Out
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => navigate("/login")} className="w-full text-xs text-primary hover:underline flex items-center gap-1 justify-center">
+                <LogIn className="h-3 w-3" /> Login / Sign Up
+              </button>
+            )}
+            <p className="text-[10px] text-muted-foreground text-center">Free & Open • 🇮🇳 Made for India</p>
           </div>
         )}
       </SidebarFooter>

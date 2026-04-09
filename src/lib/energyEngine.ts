@@ -145,15 +145,17 @@ export function analyzeEnergy(input: AnalysisInput): AnalysisResult {
 
   // 2. REUSE (shift): move flexible appliances out of peak
   const flexInPeak = optimizedAppliances.filter(
-    (a) => a.type === "flexible" && isPeakHour(a.startHour, peakStart, peakEnd)
+    (a) => {
+      if (a.type !== "flexible") return false;
+      const activeHours = getActiveHours(a.startHour, a.endHour);
+      return activeHours.some((h) => isPeakHour(h, peakStart, peakEnd));
+    }
   );
   if (flexInPeak.length > 0) {
     const best = [...flexInPeak].sort((a, b) => b.power - a.power)[0];
-    const duration = best.endHour > best.startHour
-      ? best.endHour - best.startHour
-      : 24 - best.startHour + best.endHour;
+    const duration = best.usageHours;
     const newStart = peakEnd;
-    const newEnd = (newStart + duration) % 24;
+    const newEnd = Math.min(newStart + duration, 24);
     const savedCost = (best.power / 1000) * duration * tariff * 0.5;
     recommendations.push({
       action: `Shift ${best.name} to ${newStart}:00–${newEnd || 24}:00 (off-peak)`,
