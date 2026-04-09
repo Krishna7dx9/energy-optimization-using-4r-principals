@@ -11,9 +11,9 @@ interface Props {
 }
 
 const DEFAULT_APPLIANCES: Partial<Appliance>[] = [
-  { name: "Air Conditioner", power: 1500, usageHours: 8, startHour: 10, endHour: 18, type: "flexible" },
+  { name: "Air Conditioner", power: 1500, usageHours: 8, startHour: 14, endHour: 22, type: "flexible" },
   { name: "Refrigerator", power: 150, usageHours: 24, startHour: 0, endHour: 24, type: "fixed" },
-  { name: "Washing Machine", power: 500, usageHours: 2, startHour: 9, endHour: 11, type: "flexible" },
+  { name: "Washing Machine", power: 500, usageHours: 2, startHour: 18, endHour: 20, type: "flexible" },
 ];
 
 export default function InputForm({ onAnalyze }: Props) {
