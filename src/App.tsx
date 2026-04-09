@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/contexts/AuthContext";
 import AppLayout from "./layouts/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Analyzer from "./pages/Analyzer";
@@ -11,6 +12,7 @@ import Tariffs from "./pages/Tariffs";
 import Tips from "./pages/Tips";
 import About from "./pages/About";
 import Compare from "./pages/Compare";
+import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -18,22 +20,25 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/analyzer" element={<Analyzer />} />
-            <Route path="/appliances" element={<Appliances />} />
-            <Route path="/tariffs" element={<Tariffs />} />
-            <Route path="/tips" element={<Tips />} />
-            <Route path="/compare" element={<Compare />} />
-            <Route path="/about" element={<About />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <AuthProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/analyzer" element={<Analyzer />} />
+              <Route path="/appliances" element={<Appliances />} />
+              <Route path="/tariffs" element={<Tariffs />} />
+              <Route path="/tips" element={<Tips />} />
+              <Route path="/compare" element={<Compare />} />
+              <Route path="/about" element={<About />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
