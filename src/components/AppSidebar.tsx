@@ -1,4 +1,4 @@
-import { LayoutDashboard, Zap, Package, MapPin, BookOpen, Info, Leaf } from "lucide-react";
+import { LayoutDashboard, Zap, Package, MapPin, BookOpen, Info, Leaf, Scale } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -19,6 +19,7 @@ const NAV_ITEMS = [
   { title: "Energy Analyzer", url: "/analyzer", icon: Zap },
   { title: "Appliance Database", url: "/appliances", icon: Package },
   { title: "State Tariffs", url: "/tariffs", icon: MapPin },
+  { title: "Bill Comparison", url: "/compare", icon: Scale },
   { title: "Saving Tips", url: "/tips", icon: BookOpen },
   { title: "About", url: "/about", icon: Info },
 ];

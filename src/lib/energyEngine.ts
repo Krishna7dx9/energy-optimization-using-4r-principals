@@ -42,18 +42,26 @@ export interface AnalysisResult {
   savingsPercent: number;
 }
 
+function getActiveHours(startHour: number, endHour: number): number[] {
+  const hours: number[] = [];
+  if (startHour <= endHour) {
+    for (let h = startHour; h < endHour && h < 24; h++) hours.push(h);
+  } else {
+    for (let h = startHour; h < 24; h++) hours.push(h);
+    for (let h = 0; h < endHour; h++) hours.push(h);
+  }
+  return hours;
+}
+
 function buildLoadProfile(appliances: Appliance[]): number[] {
   const profile = new Array(24).fill(0);
   for (const a of appliances) {
     const powerKw = a.power / 1000;
-    if (a.startHour <= a.endHour) {
-      for (let h = a.startHour; h < a.endHour && h < 24; h++) {
-        profile[h] += powerKw;
-      }
-    } else {
-      // wraps midnight
-      for (let h = a.startHour; h < 24; h++) profile[h] += powerKw;
-      for (let h = 0; h < a.endHour; h++) profile[h] += powerKw;
+    const activeHours = getActiveHours(a.startHour, a.endHour);
+    // Only fill up to usageHours within the active window
+    const hoursToFill = Math.min(a.usageHours, activeHours.length);
+    for (let i = 0; i < hoursToFill; i++) {
+      profile[activeHours[i]] += powerKw;
     }
   }
   return profile;
@@ -62,9 +70,7 @@ function buildLoadProfile(appliances: Appliance[]): number[] {
 function calcCost(profile: number[], tariff: number, peakStart: number, peakEnd: number): number {
   let cost = 0;
   for (let h = 0; h < 24; h++) {
-    const isPeak = peakStart <= peakEnd
-      ? h >= peakStart && h < peakEnd
-      : h >= peakStart || h < peakEnd;
+    const isPeak = isPeakHour(h, peakStart, peakEnd);
     cost += profile[h] * tariff * (isPeak ? 1.5 : 1);
   }
   return cost;
@@ -86,10 +92,21 @@ function findPeakHours(profile: number[]): number[] {
 export function analyzeEnergy(input: AnalysisInput): AnalysisResult {
   const { appliances, tariff, peakStart, peakEnd } = input;
 
+  if (appliances.length === 0) {
+    return {
+      totalEnergy: 0, monthlyEnergy: 0, cost: 0, monthlyCost: 0,
+      loadProfile: new Array(24).fill(0), applianceEnergy: [],
+      peakHours: [], peakLoad: 0, recommendations: [],
+      optimizedLoadProfile: new Array(24).fill(0),
+      optimizedEnergy: 0, optimizedCost: 0, optimizedPeakLoad: 0,
+      savingsRupees: 0, savingsPercent: 0,
+    };
+  }
+
   // Per-appliance energy
   const applianceEnergy = appliances.map((a) => ({
     name: a.name,
-    energy: (a.power * a.usageHours) / 1000,
+    energy: Math.round((a.power * a.usageHours) / 1000 * 100) / 100,
   }));
 
   const totalEnergy = applianceEnergy.reduce((s, a) => s + a.energy, 0);
@@ -98,11 +115,11 @@ export function analyzeEnergy(input: AnalysisInput): AnalysisResult {
   const peakHours = findPeakHours(loadProfile);
   const peakLoad = Math.max(...loadProfile);
 
-  // --- Optimization ---
-  const optimizedAppliances = appliances.map((a) => ({ ...a }));
+  // --- Optimization: create deep copy ---
+  const optimizedAppliances: Appliance[] = appliances.map((a) => ({ ...a }));
   const recommendations: Recommendation[] = [];
 
-  // 1. REDUCE: cut 1 hour from highest consumer if > 3 hours
+  // 1. REDUCE: shrink endHour for the highest consumer (if usageHours > 2)
   const sorted = [...optimizedAppliances].sort((a, b) => b.power * b.usageHours - a.power * a.usageHours);
   const topConsumer = sorted[0];
   if (topConsumer && topConsumer.usageHours > 2) {
@@ -116,7 +133,14 @@ export function analyzeEnergy(input: AnalysisInput): AnalysisResult {
       category: "Reduce",
     });
     const idx = optimizedAppliances.findIndex((a) => a.id === topConsumer.id);
-    if (idx >= 0) optimizedAppliances[idx].usageHours -= 1;
+    if (idx >= 0) {
+      optimizedAppliances[idx].usageHours -= 1;
+      // Also shrink the time window so buildLoadProfile reflects the change
+      const activeLen = getActiveHours(optimizedAppliances[idx].startHour, optimizedAppliances[idx].endHour).length;
+      if (activeLen > optimizedAppliances[idx].usageHours && optimizedAppliances[idx].endHour > optimizedAppliances[idx].startHour) {
+        optimizedAppliances[idx].endHour = optimizedAppliances[idx].startHour + optimizedAppliances[idx].usageHours;
+      }
+    }
   }
 
   // 2. REUSE (shift): move flexible appliances out of peak
@@ -124,16 +148,15 @@ export function analyzeEnergy(input: AnalysisInput): AnalysisResult {
     (a) => a.type === "flexible" && isPeakHour(a.startHour, peakStart, peakEnd)
   );
   if (flexInPeak.length > 0) {
-    const best = flexInPeak.sort((a, b) => b.power - a.power)[0];
+    const best = [...flexInPeak].sort((a, b) => b.power - a.power)[0];
     const duration = best.endHour > best.startHour
       ? best.endHour - best.startHour
       : 24 - best.startHour + best.endHour;
-    // shift to off-peak: after peakEnd
     const newStart = peakEnd;
     const newEnd = (newStart + duration) % 24;
-    const savedCost = (best.power / 1000) * duration * tariff * 0.5; // save the peak premium
+    const savedCost = (best.power / 1000) * duration * tariff * 0.5;
     recommendations.push({
-      action: `Shift ${best.name} to ${newStart}:00–${newEnd}:00 (off-peak)`,
+      action: `Shift ${best.name} to ${newStart}:00–${newEnd || 24}:00 (off-peak)`,
       reason: `Running ${best.name} during peak hours costs 50% more`,
       savingsRupees: Math.round(savedCost * 30),
       savingsPercent: cost > 0 ? Math.round((savedCost / (cost / 30)) * 100) : 0,
@@ -187,7 +210,7 @@ export function analyzeEnergy(input: AnalysisInput): AnalysisResult {
     applianceEnergy,
     peakHours,
     peakLoad: Math.round(peakLoad * 100) / 100,
-    recommendations: recommendations.slice(0, 3),
+    recommendations: recommendations.slice(0, 4),
     optimizedLoadProfile,
     optimizedEnergy: Math.round(optimizedEnergy * 100) / 100,
     optimizedCost: Math.round(optimizedCost * 100) / 100,
