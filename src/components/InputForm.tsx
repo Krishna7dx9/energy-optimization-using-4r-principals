@@ -114,6 +114,7 @@ export default function InputForm({ onAnalyze }: Props) {
                 <SelectItem value="fixed">Fixed</SelectItem>
               </SelectContent>
             </Select>
+            </div>
           </div>
           <Button onClick={addAppliance} variant="outline" className="mt-3" size="sm">
             <Plus className="h-4 w-4 mr-1" /> Add
