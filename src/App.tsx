@@ -10,6 +10,7 @@ import Appliances from "./pages/Appliances";
 import Tariffs from "./pages/Tariffs";
 import Tips from "./pages/Tips";
 import About from "./pages/About";
+import Compare from "./pages/Compare";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/appliances" element={<Appliances />} />
             <Route path="/tariffs" element={<Tariffs />} />
             <Route path="/tips" element={<Tips />} />
+            <Route path="/compare" element={<Compare />} />
             <Route path="/about" element={<About />} />
           </Route>
           <Route path="*" element={<NotFound />} />
